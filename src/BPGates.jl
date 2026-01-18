@@ -554,44 +554,40 @@ function QuantumClifford.apply!(state::BellState, g::T1NoiseOp)
     r = rand()
     λ₁ = g.λ₁
 
-    output_state = if input_state==1
+    output_state = if input_state==1 # State 00, |Φ⁺⟩
         if     r < 0.5*λ₁^2 - λ₁ + 1
             1
-        elseif r < 0.5*λ₁^2 - λ₁ + 1  +  0.5*λ₁^2
-            2 # XXX
-        elseif r < 0.5*λ₁^2 - λ₁ + 1  +  0.5*λ₁^2 +  0.5*λ₁*(1-λ₁)
-            3 # XXX
-        else # r < 1 = 0.5*λ₁^2 - λ₁ + 1  +  0.5*λ₁*(1-λ₁)  +  0.5*λ₁^2  +   0.5*λ₁*(1-λ₁)
+        elseif r < 0.5*λ₁^2 - λ₁ + 1 + 0.5*λ₁^2
+            2
+        elseif r < 0.5*λ₁^2 - λ₁ + 1 + 0.5*λ₁^2 + 0.5*λ₁*(1-λ₁)
+            3
+        else # r < 1 = 0.5*λ₁^2 - λ₁ + 1 + 0.5*λ₁^2 + 0.5*λ₁*(1-λ₁) + 0.5*λ₁*(1-λ₁)
             4
         end
-    elseif input_state==2
+    elseif input_state==2 # State 10, |Φ⁻⟩
         if     r < 0.5*λ₁^2
             1
-        elseif r < 0.5*λ₁^2 + 0.5*λ₁^2 -λ₁ + 1
-            2 # XXX
-        elseif r < 0.5*λ₁^2 + 0.5*λ₁^2 -λ₁ + 1 + 0.5*λ₁*(1-λ₁)
-            3 # XXX
-        else # r < 1 = 0.5*λ₁^2 + 0.5*λ₁^2 -λ₁ + 1 + 0.5*λ₁*(1-λ₁) + 0.5*λ₁*(1-λ₁)
+        elseif r < 0.5*λ₁^2 + 0.5*λ₁^2 - λ₁ + 1
+            2
+        elseif r < 0.5*λ₁^2 + 0.5*λ₁^2 - λ₁ + 1 + 0.5*λ₁*(1-λ₁)
+            3
+        else # r < 1 = 0.5*λ₁^2 + 0.5*λ₁^2 - λ₁ + 1 + 0.5*λ₁*(1-λ₁) + 0.5*λ₁*(1-λ₁)
             4
         end
-    elseif input_state==3
-        if     r < 0.5*λ₁
-            1
-        elseif r < 0.5*λ₁  +  0.5*λ₁
-            2 # XXX
-        elseif r < 0.5*λ₁  +  0.5*λ₁  +  (1-λ₁)
-            3 # XXX
-        else # r < 1 = 0.5*λ₁  +  0.5*λ₁  +  (1-λ₁)  +  0
-            4
-        end
-    else # input_state==4
+    elseif input_state==3 # State 01, |Ψ⁺⟩
         if     r < 0.5*λ₁
             1
         elseif r < 0.5*λ₁ + 0.5*λ₁
-            2 # XXX
-        # elseif r < 0.5*λ₁ + 0.5*λ₁ + 0             # output_state 3 is never reached
-        #     3 # XXX
-        else # r < 1 = 0.5*λ₁ + 0.5*λ₁ + 0 + 1-λ₁
+            2
+        else # r < 1 = 0.5*λ₁ + 0.5*λ₁ + 1 - λ₁
+            3
+        end
+    else # input_state==4 # State 11, |Ψ⁻⟩
+        if     r < 0.5*λ₁
+            1
+        elseif r < 0.5*λ₁ + 0.5*λ₁
+            2
+        else # r < 1 = 0.5*λ₁ + 0.5*λ₁ + 1 - λ₁
             4
         end
     end
@@ -608,6 +604,7 @@ struct T2NoiseOp <: BellOp
     λ₂::Float64
 end
 
+# T2 - here it is actually T_ϕ, dephasing
 function QuantumClifford.apply!(state::BellState, g::T2NoiseOp)
     phase = state.phases
     input_state = bit_to_int(phase[g.idx*2-1],phase[g.idx*2]) # this is my initial state
@@ -615,29 +612,29 @@ function QuantumClifford.apply!(state::BellState, g::T2NoiseOp)
     r = rand()
     λ₂ = g.λ₂
 
-    output_state = if input_state==1
+    output_state = if input_state==1 # State 00, |Φ⁺⟩
         if     r < 0.5*λ₂^2 - λ₂ + 1
             1
-        else # r < 1 = 0.5*λ₂^2 - λ₂ + 1  +  0.5*λ₂*(2-λ₂)
+        else # r < 1 = 0.5*λ₂^2 - λ₂ + 1 + λ₂*(1 - 0.5*λ₂)
             2
         end
-    elseif input_state==2
-        if     r < 0.5*λ₂^2 - λ₂ + 1
-            2
-        else # r < 1 = 0.5*λ₂^2 - λ₂ + 1  +  0.5*λ₂*(2-λ₂)
+    elseif input_state==2 # State 10, |Φ⁻⟩
+        if     r < λ₂*(1 - 0.5*λ₂)
             1
+        else # r < 1 = λ₂*(1 - 0.5*λ₂) + 0.5*λ₂^2 - λ₂ + 1
+            2
         end
-    elseif input_state==3
+    elseif input_state==3 # State 01, |Ψ⁺⟩
         if     r < 0.5*λ₂^2 - λ₂ + 1
             3
-        else # r < 1 = 0.5*λ₂^2 - λ₂ + 1  +  0.5*λ₂*(2-λ₂)
+        else # r < 1 = 0.5*λ₂^2 - λ₂ + 1 + λ₂*(1 - 0.5*λ₂)
             4
         end
-    else # input_state==4
-        if     r < 0.5*λ₂^2 - λ₂ + 1
-            4
-        else # r < 1 = 0.5*λ₂^2 - λ₂ + 1  +  0.5*λ₂*(2-λ₂)
+    else # input_state==4 # State 11, |Ψ⁻⟩
+        if     r < λ₂*(1 - 0.5*λ₂)
             3
+        else # r < 1 = λ₂*(1 - 0.5*λ₂) + 0.5*λ₂^2 - λ₂ + 1
+            4
         end
     end
 
