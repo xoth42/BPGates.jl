@@ -9,7 +9,7 @@ export BellState,
     BellMeasure, bellmeasure!,
     BellGate, CNOTPerm, GoodSingleQubitPerm,
     PauliNoiseOp, PauliNoiseBellGate, NoisyBellMeasure, NoisyBellMeasureNoisyReset,
-    BellSwap, NoisyBellSwap, T1NoiseOp, T2NoiseOp
+    BellSwap, NoisyBellSwap, T1NoiseOp, T2NoiseOp, T1DepolarizingOp, ADCOp, ManualADCOp
 
 const IT = Union{Int8,Int16,Int32,Int64,UInt8,UInt16,UInt32,UInt64}
 
@@ -540,6 +540,109 @@ function QuantumClifford.apply!(state::BellState, g::PauliNoiseOp)
     end
     return state
 end
+
+############ EXPERIMENTAL NOISE METHODS ######
+
+# Manual Asym. Depol. Noise 
+struct ManualADCOp <: BellOp
+    idx::Int      # which Bell pair
+    py_px::Float64 # probability of X err, Y err, equal probs 
+    pz::Float64 # Probability of Z err
+end
+
+
+function QuantumClifford.apply!(state::BellState, g::ManualADCOp)
+    phase = state.phases
+    input_state = bit_to_int(phase[g.idx*2-1],phase[g.idx*2]) # this is my initial state
+
+    r = rand()
+    p_xy = g.py_px
+    p_z = g.pz
+
+    
+    output_state = if input_state == 1  # State  |Φ⁺⟩
+        if r < 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            1
+        elseif r < 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            2
+        elseif r < 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 2.0*p_xy*(1 - 2*p_xy)
+            3
+        else  # r < 1 = 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy)
+            4
+        end
+    elseif input_state == 2  # State Φ-
+        if r < 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            1
+        elseif r < 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            2
+        elseif r < 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 2.0*p_xy*(1 - 2*p_xy)
+            3
+        else  # r < 1 = 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy)
+            4
+        end
+    elseif input_state == 3  # State Ψ+
+        if r < 2.0*p_xy*(1 - 2*p_xy)
+            1
+        elseif r < 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy)
+            2
+        elseif r < 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy) + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            3
+        else  # r < 1 = 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy) + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            4
+        end
+    elseif input_state == 4  # State Ψ-
+        if r < 2.0*p_xy*(1 - 2*p_xy)
+            1
+        elseif r < 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy)
+            2
+        elseif r < 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy) + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            3
+        else  # r < 1 = 2.0*p_xy*(1 - 2*p_xy) + 2.0*p_xy*(1 - 2*p_xy) + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 0.5*p_z^2 + 2.0*p_z*(-2*p_xy - p_z + 1) - 1.0*p_z - 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5 + 4.0*p_xy^2 + 2.0*p_xy*p_z - 2.0*p_xy + 1.5*p_z^2 - 1.0*p_z + 1.0*(1.0*p_xy + 0.5*p_z - 0.5)*(2*p_xy + p_z - 1) + 0.5
+            4
+        end
+    end
+
+    bit1, bit2 = int_to_bit(output_state, Val(2))
+    @inbounds phase[g.idx*2-1] = bit1
+    @inbounds phase[g.idx*2] = bit2
+    return state
+end
+
+
+
+"""High-level T1 model: Bell depolarizing channel calibrated to amplitude damping.
+Uses PauliNoiseOp(px,py,pz) with px=py=pz = p_dep(λ₁)/3, where
+p_dep(λ) = λ - 0.5*λ^2 matches the |Φ⁺⟩ fidelity of true T1 at parameter λ."""
+struct T1DepolarizingOp <: BellOp
+    idx::Int      # which Bell pair
+    λ₁::Float64   # effective T1 amplitude-damping parameter λ in [0,1]
+end
+
+@inline function bell_T1_depolarizing_probs(λ::Float64)
+    p_dep = λ - 0.5*λ^2   # calibrated to F_AD(λ) = 0.5*λ^2 - λ + 1
+    p = p_dep / 3
+    return p, p, p        # (px, py, pz)
+end
+
+function QuantumClifford.apply!(state::BellState, g::T1DepolarizingOp)
+    px, py, pz = bell_T1_depolarizing_probs(g.λ₁)
+    # Use the existing PauliNoiseOp to apply one of the three Bell flips
+    return QuantumClifford.apply!(state, PauliNoiseOp(g.idx, px, py, pz))
+end
+
+"""Asymmetric Depolarizing Op - wrapper for pauli noise squewed in one direction (towards phase err or ampl. error)"""
+struct ADCOp <: BellOp
+    idx::Int      # which Bell pair
+    py_px::Float64 # probability of X err, Y err, equal probs 
+    pz::Float64 # Probability of Z err
+end
+
+
+function QuantumClifford.apply!(state::BellState, g::ADCOp)
+    return QuantumClifford.apply!(state, PauliNoiseOp(g.idx, g.py_px, g.py_px, g.pz))
+end
+
+######## END EXP. NOISE ########
 
 """Simulates bilateral twirled T1 noise with per-qubit Kraus ops `|0⟩⟨0| + √(1-λ) |1⟩⟨1|` and `√λ |0⟩⟨1|`"""
 struct T1NoiseOp <: BellOp

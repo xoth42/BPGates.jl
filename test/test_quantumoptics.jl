@@ -44,7 +44,7 @@ end
 @testset "T1 and T2 noise" begin
 
 # define some BP objects
-λ = 0.2
+λ = 0.2 # test other lambdas TODO
 N = 100000
 opBP_T1 = T1NoiseOp(1, λ)
 opBP_T2 = T2NoiseOp(1, λ)
@@ -54,12 +54,12 @@ b = SpinBasis(1//2)
 l0 = spinup(b)
 l1 = spindown(b)
 l00 = l0⊗l0
-l01 = l1⊗l0 # XXX be careful with the reversed endiandness - this is ket [0 1 0 0]
-l10 = l0⊗l1 # XXX be careful with the reversed endiandness - this is ket [0 0 1 0]
+l01 = l1⊗l0 # be careful with the reversed endiandness - this is ket [0 1 0 0]
+l10 = l0⊗l1 # be careful with the reversed endiandness - this is ket [0 0 1 0]
 l11 = l1⊗l1
 bell00 = (l00+l11)/sqrt(2)
-bell10 = (l00-l11)/sqrt(2) # XXX                                # bellstateindex = 2
-bell01 = (l01+l10)/sqrt(2) # XXX                                # bellstateindex = 3
+bell10 = (l00-l11)/sqrt(2)                                # bellstateindex = 2
+bell01 = (l01+l10)/sqrt(2)                               # bellstateindex = 3
 bell11 = (l01-l10)/sqrt(2)
 #|`00`|`+XX +ZZ`|`∣00⟩+∣11⟩`|`∣++⟩+∣--⟩`|`∣i₊i₋⟩+∣i₋i₊⟩`|
 #|`10`|`-XX +ZZ`|`∣00⟩-∣11⟩`|`∣+-⟩+∣-+⟩`|`∣i₊i₊⟩+∣i₋i₋⟩`|       # be careful : bellstateindex = 2
@@ -116,5 +116,5 @@ for bellstateindex in 1:4
 
 end
 end
-
+print("test")
 end
